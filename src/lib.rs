@@ -2,6 +2,30 @@
 
 use std::cmp::Ordering;
 
+/// path: path to the other nodes
+/// cost: weight of the path corresponding to each path
+fn warshall_floyd(path: Vec<Vec<usize>>, cost: Vec<Vec<usize>>) -> Vec<Vec<usize>> {
+    let mut table = vec![vec![usize::MAX; path.len()]; path.len()];
+
+    for i in 0..path.len() {
+        table[i][i] = 0;
+        for (j, c) in path[i].iter().zip(cost[i].iter()) {
+            table[i][*j] = *c;
+        }
+    }
+
+    for k in 0..path.len() {
+        for i in 0..path.len() {
+            for j in 0..path.len() {
+                println!("{} -> {} | {} | {} {}", i, j, table[i][j], table[i][k], table[k][j]);
+                table[i][j] = table[i][j].min(table[i][k].saturating_add(table[k][j]));
+            }
+        }
+    }
+
+    table
+}
+
 fn y() {
     println!("yes");
 }
@@ -20,7 +44,9 @@ fn N() {
 
 #[macro_export]
 macro_rules! ans {
-    ($i:item) => (println!("{}", stringify!($i)))
+    ($i:item) => {
+        println!("{}", stringify!($i))
+    };
 }
 
 /// get_divisors function returns the list of divisors of n.
@@ -192,5 +218,23 @@ mod tests {
         assert_eq!(get_divisors(36), vec![1, 2, 3, 4, 6, 9, 12, 18, 36]);
         assert_eq!(get_divisors(24), vec![1, 2, 3, 4, 6, 8, 12, 24]);
         assert_eq!(get_divisors(1), vec![1]);
+    }
+
+    #[test]
+    fn test_warshall_floyd() {
+        let path = vec![vec![1, 2, 3], vec![0, 3], vec![0, 3], vec![0, 1, 2]];
+
+        let cost = vec![vec![5, 3, 8], vec![5, 2], vec![3, 20], vec![8, 2, 20]];
+
+        let ans = vec![
+            vec![0, 5, 3, 7],
+            vec![5, 0, 8, 2],
+            vec![3, 8, 0, 10],
+            vec![7, 2, 10, 0],
+        ];
+
+        let ret = warshall_floyd(path, cost);
+
+        assert_eq!(ret, ans);
     }
 }
