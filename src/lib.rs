@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 
 /// path: path to the other nodes
 /// cost: weight of the path corresponding to each path
+/// https://qiita.com/okaryo/items/8e6cd73f8a676b7a5d75
 fn warshall_floyd(path: Vec<Vec<usize>>, cost: Vec<Vec<usize>>) -> Vec<Vec<usize>> {
     let mut table = vec![vec![usize::MAX; path.len()]; path.len()];
 
