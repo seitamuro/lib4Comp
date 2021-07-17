@@ -3,47 +3,63 @@
 use std::cmp::Ordering;
 
 fn lower_bound<T: Ord>(list: &[T], value: T) -> Option<usize> {
-    let mut lower = None;
-    let mut higher = None;
+    let mut lower = -1i32;
+    let mut higher = list.len() as i32;
+    let h = list.len() as i32 - 1;
 
-    if list[0] <= value {
-        lower = Some(0);
+    fn w(v: i32, low: i32, high: i32) -> usize {
+        if v < low {
+            return low as usize;
+        } else if v > high {
+            return high as usize;
+        }
+        v as usize
     }
 
-    while higher.unwrap_or(list.len()) - lower.unwrap_or(0) > 1 {
-        let m = (higher.unwrap_or(list.len()) - lower.unwrap_or(0)) / 2 + lower.unwrap_or(0);
-        if list[m] <= value {
-            if list[m.saturating_sub(1)] == list[m] && list[m] == value {
-                higher = Some(m);
-            } else {
-                lower = Some(m);
-            }
-        } else if list[m] > value {
-            higher = Some(m);
+    while lower != higher && higher - lower > 1 {
+        let m = (higher - lower) / 2 + lower;
+        if list[w(m, 0, h)] < value {
+            lower = m;
+        } else if list[w(m, 0, h)] >= value {
+            higher = m;
         }
     }
 
-    lower
+    if higher >= list.len() as i32 {
+        None
+    } else {
+        Some(higher as usize)
+    }
 }
 
 fn higher_bound<T: Ord>(list: &[T], value: T) -> Option<usize> {
-    let mut lower = None;
-    let mut higher = None;
+    let mut lower = -1i32;
+    let mut higher = list.len() as i32;
+    let h = list.len() as i32 - 1;
 
-    if list[0] >= value {
-        higher = Some(0);
+    fn w(v: i32, low: i32, high: i32) -> usize {
+        if v < low {
+            return low as usize;
+        } else if v > high {
+            return high as usize;
+        }
+        v as usize
     }
 
-    while higher.unwrap_or(list.len()) - lower.unwrap_or(0) > 1 {
-        let m = (higher.unwrap_or(list.len()) - lower.unwrap_or(0)) / 2 + lower.unwrap_or(0);
-        if list[m] < value {
-            lower = Some(m);
-        } else if list[m] >= value {
-            higher = Some(m);
+    while lower != higher && (higher - lower) > 1 {
+        let m = (higher - lower) / 2 + lower;
+        if list[w(m, 0, h)] <= value {
+            lower = m as i32;
+        } else if list[w(m, 0, h)] > value {
+            higher = m as i32;
         }
     }
 
-    higher
+    if lower < 0 {
+        None
+    } else {
+        Some(lower as usize)
+    }
 }
 
 /// path: path to the other nodes
@@ -287,51 +303,64 @@ mod tests {
     fn test_lower_bound() {
         let a = vec![1, 2, 3, 4, 5, 6];
         assert_eq!(Some(2), lower_bound(&a, 3));
-        assert_eq!(None, lower_bound(&a, 0));
+        assert_eq!(Some(0), lower_bound(&a, 0));
         assert_eq!(Some(0), lower_bound(&a, 1));
-        assert_eq!(Some(5), lower_bound(&a, 7));
+        assert_eq!(None, lower_bound(&a, 7));
         assert_eq!(Some(5), lower_bound(&a, 6));
 
         let a = vec![1, 2, 3, 4, 4, 4];
         assert_eq!(Some(2), lower_bound(&a, 3));
-        assert_eq!(None, lower_bound(&a, 0));
+        assert_eq!(Some(0), lower_bound(&a, 0));
         assert_eq!(Some(0), lower_bound(&a, 1));
-        assert_eq!(Some(5), lower_bound(&a, 7));
-        assert_eq!(Some(5), lower_bound(&a, 6));
+        assert_eq!(None, lower_bound(&a, 7));
+        assert_eq!(None, lower_bound(&a, 6));
         assert_eq!(Some(3), lower_bound(&a, 4));
 
         let a = vec![1, 4, 4, 4, 4, 4];
-        assert_eq!(Some(0), lower_bound(&a, 3));
-        assert_eq!(None, lower_bound(&a, 0));
+        assert_eq!(Some(1), lower_bound(&a, 3));
+        assert_eq!(Some(0), lower_bound(&a, 0));
         assert_eq!(Some(0), lower_bound(&a, 1));
-        assert_eq!(Some(5), lower_bound(&a, 7));
-        assert_eq!(Some(5), lower_bound(&a, 6));
+        assert_eq!(None, lower_bound(&a, 7));
+        assert_eq!(None, lower_bound(&a, 6));
         assert_eq!(Some(1), lower_bound(&a, 4));
+
+        let a = vec![1, 1, 4, 4, 6, 6];
+        assert_eq!(Some(0), lower_bound(&a, 1));
+        assert_eq!(Some(2), lower_bound(&a, 4));
+        assert_eq!(Some(4), lower_bound(&a, 6));
     }
 
     #[test]
     fn test_higher_bound() {
         let a = vec![1, 2, 3, 4, 5, 6];
         assert_eq!(Some(2), higher_bound(&a, 3));
-        assert_eq!(Some(0), higher_bound(&a, 0));
+        assert_eq!(None, higher_bound(&a, 0));
         assert_eq!(Some(0), higher_bound(&a, 1));
-        assert_eq!(None, higher_bound(&a, 7));
+        assert_eq!(Some(5), higher_bound(&a, 7));
         assert_eq!(Some(5), higher_bound(&a, 6));
 
         let a = vec![1, 2, 3, 4, 4, 4];
         assert_eq!(Some(2), higher_bound(&a, 3));
-        assert_eq!(Some(0), higher_bound(&a, 0));
+        assert_eq!(None, higher_bound(&a, 0));
         assert_eq!(Some(0), higher_bound(&a, 1));
-        assert_eq!(None, higher_bound(&a, 7));
-        assert_eq!(None, higher_bound(&a, 6));
-        assert_eq!(Some(3), higher_bound(&a, 4));
+        assert_eq!(Some(5), higher_bound(&a, 7));
+        assert_eq!(Some(5), higher_bound(&a, 6));
+        assert_eq!(Some(5), higher_bound(&a, 4));
 
         let a = vec![1, 4, 4, 4, 4, 4];
-        assert_eq!(Some(1), higher_bound(&a, 3));
-        assert_eq!(Some(0), higher_bound(&a, 0));
+        assert_eq!(Some(0), higher_bound(&a, 3));
+        assert_eq!(None, higher_bound(&a, 0));
         assert_eq!(Some(0), higher_bound(&a, 1));
-        assert_eq!(None, higher_bound(&a, 7));
-        assert_eq!(None, higher_bound(&a, 6));
-        assert_eq!(Some(1), higher_bound(&a, 4));
+        assert_eq!(Some(5), higher_bound(&a, 7));
+        assert_eq!(Some(5), higher_bound(&a, 6));
+        assert_eq!(Some(5), higher_bound(&a, 4));
+
+        let a = vec![1, 3, 3, 3, 4];
+        assert_eq!(Some(4), higher_bound(&a, 4));
+        assert_eq!(Some(3), higher_bound(&a, 3));
+        assert_eq!(Some(0), higher_bound(&a, 1));
+
+        let a = vec![1, 1, 3, 3, 4];
+        assert_eq!(Some(1), higher_bound(&a, 1));
     }
 }
