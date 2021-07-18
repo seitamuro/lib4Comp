@@ -1,6 +1,44 @@
 #![allow(dead_code, non_snake_case)]
-
 use std::cmp::Ordering;
+use std::collections::{HashMap, VecDeque};
+
+struct CountQ {
+    q: VecDeque<usize>,
+    maxlen: usize,
+    memo: HashMap<usize, usize>,
+    count: usize,
+}
+
+impl CountQ {
+    fn new(maxlen: usize) -> Self {
+        Self {
+            q: VecDeque::new(),
+            maxlen: maxlen,
+            memo: HashMap::new(),
+            count: 0,
+        }
+    }
+
+    fn push(&mut self, v: usize) {
+        self.q.push_back(v);
+        self.count += if *self.memo.get(&v).unwrap_or(&0) == 0 {1} else {0};
+        self.memo.insert(v, *self.memo.get(&v).unwrap_or(&0) + 1);
+
+        if self.q.len() > self.maxlen {
+            let k = self.q.pop_front().unwrap();
+            self.memo.insert(k, *self.memo.get(&k).unwrap() - 1);
+            self.count -= if *self.memo.get(&k).unwrap_or(&0) == 0 {1} else {0};
+        }
+    }
+
+    fn ok(&self) -> bool {
+        self.q.len() == self.maxlen
+    }
+
+    fn cnt(&self) -> usize {
+        self.count
+    }
+}
 
 fn lower_bound<T: Ord>(list: &[T], value: T) -> Option<usize> {
     let mut lower = -1i32;
@@ -362,5 +400,22 @@ mod tests {
 
         let a = vec![1, 1, 3, 3, 4];
         assert_eq!(Some(1), higher_bound(&a, 1));
+    }
+
+    #[test]
+    fn test_CountQ() {
+        let mut q = CountQ::new(2);
+        let a = [1, 1, 1, 3, 4, 5, 6];
+        let mut ret = Vec::new();
+
+        for i in a.iter() {
+            let i = *i;
+            q.push(i);
+            if q.ok() {
+                ret.push(q.cnt());
+            }
+        }
+
+        assert_eq!(ret, [1, 1, 2, 2, 2, 2]);
     }
 }
