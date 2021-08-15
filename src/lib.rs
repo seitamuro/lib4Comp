@@ -259,9 +259,52 @@ fn bfs(start: usize, node: &[usize], path: &[Vec<usize>]) -> Vec<Option<usize>> 
     ans
 }
 
+// path: Vec<(to, cost)>
+#[allow(unused_assignments)]
+fn dijkstra(path: &[Vec<(usize, usize)>], start: usize) -> Vec<usize> {
+    let mut costs = vec![std::usize::MAX; path.len()];
+    let mut todo = VecDeque::new();
+    todo.push_back(start);
+    costs[start] = 0;
+
+    while !todo.is_empty() {
+        let from = todo.remove(0).unwrap();
+        for &(to, c) in path[from].iter() {
+            let mut min = usize::MAX;
+            let mut min_to = None;
+            if costs[from] + c < costs[to] {
+                costs[to] = costs[from] + c;
+                if costs[to] < min {
+                    min = costs[to];
+                    min_to = Some(to);
+                }
+            }
+
+            if min_to.is_some() {
+                todo.push_back(min_to.unwrap());
+            }
+        }
+    }
+
+    costs
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_dijkstra() {
+        let path = vec![
+            vec![(3, 2), (1, 1)],
+            vec![(0, 1), (4, 1)],
+            vec![(0, 100), (4, 4)],
+            vec![(0, 2)],
+            vec![(1, 1), (2, 4)],
+        ];
+
+        assert_eq!(dijkstra(&path, 0), vec![0, 1, 6, 2, 2]);
+    }
 
     #[test]
     fn test_gcd() {
